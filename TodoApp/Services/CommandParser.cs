@@ -30,6 +30,9 @@ namespace TodoApp.Services
                 ["delete"] = args => ParseDeleteCommand(args),
                 ["undo"] = args => new UndoCommand(),
                 ["redo"] = args => new RedoCommand(),
+                ["search"] = args => ParseSearchCommand(args),
+                ["login"] = args => ParseLoginCommand(args),
+                ["register"] = args => ParseRegisterCommand(args),
             };
         }
 
@@ -160,6 +163,59 @@ namespace TodoApp.Services
             }
 
             return new DeleteCommand(index);
+        }
+
+        private static ICommand ParseSearchCommand(string[] args)
+        {
+            var parameters = new Dictionary<string, string>();
+            
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i].StartsWith("--"))
+                {
+                    string key = args[i].Substring(2);
+                    
+                    if (i + 1 < args.Length && !args[i + 1].StartsWith("--"))
+                    {
+                        parameters[key] = args[i + 1];
+                        i++;
+                    }
+                    else
+                    {
+                        parameters[key] = "true";
+                    }
+                }
+            }
+            
+            return new SearchCommand(parameters);
+        }
+
+        private static ICommand ParseLoginCommand(string[] args)
+        {
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Используйте: login <логин> <пароль>");
+                return new HelpCommand();
+            }
+
+            return new LoginCommand(args[0], args[1]);
+        }
+
+        private static ICommand ParseRegisterCommand(string[] args)
+        {
+            if (args.Length < 5)
+            {
+                Console.WriteLine("Используйте: register <логин> <пароль> <имя> <фамилия> <год рождения>");
+                return new HelpCommand();
+            }
+
+            if (!int.TryParse(args[4], out int birthYear))
+            {
+                Console.WriteLine("Год рождения должен быть числом");
+                return new HelpCommand();
+            }
+
+            return new RegisterCommand(args[0], args[1], args[2], args[3], birthYear);
         }
 
         private static string[] SplitCommand(string input)
