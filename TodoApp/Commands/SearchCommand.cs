@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TodoApp.Exceptions;
 using TodoApp.Models;
 using TodoApp.Services;
 
@@ -18,13 +19,28 @@ namespace TodoApp.Commands
         public void Execute()
         {
             var todos = AppInfo.GetCurrentTodoList();
-            if (todos == null || todos.Count == 0)
+            if (todos == null)
+            {
+                throw new AuthenticationException("Пользователь не авторизован");
+            }
+
+            if (todos.Count == 0)
             {
                 Console.WriteLine("Ничего не найдено");
                 return;
             }
 
             var query = todos.GetAll().AsEnumerable();
+
+            var validFlags = new[] { "contains", "starts-with", "ends-with", "from", "to", "status", "sort", "desc", "top" };
+            
+            foreach (var key in _parameters.Keys)
+            {
+                if (!validFlags.Contains(key))
+                {
+                    throw new InvalidArgumentException($"Неизвестный флаг: --{key}");
+                }
+            }
 
             if (_parameters.ContainsKey("contains"))
             {
@@ -46,28 +62,20 @@ namespace TodoApp.Commands
 
             if (_parameters.ContainsKey("from"))
             {
-                if (DateTime.TryParse(_parameters["from"], out DateTime fromDate))
+                if (!DateTime.TryParse(_parameters["from"], out DateTime fromDate))
                 {
-                    query = query.Where(t => t.LastUpdate.Date >= fromDate.Date);
+                    throw new InvalidArgumentException($"Неверный формат даты '{_parameters["from"]}'. Используйте yyyy-MM-dd");
                 }
-                else
-                {
-                    Console.WriteLine($"Ошибка: неверный формат даты '{_parameters["from"]}'. Используйте yyyy-MM-dd");
-                    return;
-                }
+                query = query.Where(t => t.LastUpdate.Date >= fromDate.Date);
             }
             
             if (_parameters.ContainsKey("to"))
             {
-                if (DateTime.TryParse(_parameters["to"], out DateTime toDate))
+                if (!DateTime.TryParse(_parameters["to"], out DateTime toDate))
                 {
-                    query = query.Where(t => t.LastUpdate.Date <= toDate.Date);
+                    throw new InvalidArgumentException($"Неверный формат даты '{_parameters["to"]}'. Используйте yyyy-MM-dd");
                 }
-                else
-                {
-                    Console.WriteLine($"Ошибка: неверный формат даты '{_parameters["to"]}'. Используйте yyyy-MM-dd");
-                    return;
-                }
+                query = query.Where(t => t.LastUpdate.Date <= toDate.Date);
             }
 
             if (_parameters.ContainsKey("status"))
@@ -87,18 +95,18 @@ namespace TodoApp.Commands
             {
                 query = isDescending ? query.OrderByDescending(t => t.LastUpdate) : query.OrderBy(t => t.LastUpdate);
             }
+            else if (!string.IsNullOrEmpty(sortBy))
+            {
+                throw new InvalidArgumentException($"Неизвестное поле сортировки '{sortBy}'. Используйте 'text' или 'date'");
+            }
 
             if (_parameters.ContainsKey("top"))
             {
-                if (int.TryParse(_parameters["top"], out int top) && top > 0)
+                if (!int.TryParse(_parameters["top"], out int top) || top <= 0)
                 {
-                    query = query.Take(top);
+                    throw new InvalidArgumentException($"Параметр top должен быть положительным числом. Получено: '{_parameters["top"]}'");
                 }
-                else
-                {
-                    Console.WriteLine($"Ошибка: параметр top должен быть положительным числом. Получено: '{_parameters["top"]}'");
-                    return;
-                }
+                query = query.Take(top);
             }
 
             var results = query.ToList();

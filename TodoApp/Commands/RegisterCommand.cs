@@ -1,4 +1,5 @@
 using System;
+using TodoApp.Exceptions;
 using TodoApp.Models;
 using TodoApp.Services;
 
@@ -23,11 +24,20 @@ namespace TodoApp.Commands
 
         public void Execute()
         {
+            if (string.IsNullOrWhiteSpace(_login) || string.IsNullOrWhiteSpace(_password))
+            {
+                throw new InvalidArgumentException("Логин и пароль не могут быть пустыми");
+            }
+
+            if (_birthYear < 1900 || _birthYear > DateTime.Now.Year)
+            {
+                throw new InvalidArgumentException($"Год рождения должен быть от 1900 до {DateTime.Now.Year}");
+            }
+
             var existing = FileManager.LoadAllProfiles().Find(p => p.Login == _login);
             if (existing != null)
             {
-                Console.WriteLine("Пользователь с таким логином уже существует");
-                return;
+                throw new DuplicateLoginException($"Пользователь с логином '{_login}' уже существует");
             }
 
             var profile = new Profile(_login, _password, _firstName, _lastName, _birthYear);

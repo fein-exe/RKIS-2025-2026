@@ -1,5 +1,6 @@
 using System;
 using TodoApp.Commands;
+using TodoApp.Exceptions;
 using TodoApp.Services;
 
 namespace TodoApp
@@ -76,10 +77,38 @@ namespace TodoApp
                 if (input.ToLower() == "exit")
                     break;
 
-                var command = CommandParser.Parse(input);
-                if (command != null)
+                try
                 {
-                    command.Execute();
+                    var command = CommandParser.Parse(input);
+                    command?.Execute();
+                }
+                catch (TaskNotFoundException ex)
+                {
+                    Console.WriteLine($"Ошибка задачи: {ex.Message}");
+                }
+                catch (AuthenticationException ex)
+                {
+                    Console.WriteLine($"Ошибка авторизации: {ex.Message}");
+                }
+                catch (InvalidCommandException ex)
+                {
+                    Console.WriteLine($"Ошибка команды: {ex.Message}");
+                }
+                catch (InvalidArgumentException ex)
+                {
+                    Console.WriteLine($"Ошибка аргументов: {ex.Message}");
+                }
+                catch (ProfileNotFoundException ex)
+                {
+                    Console.WriteLine($"Ошибка профиля: {ex.Message}");
+                }
+                catch (DuplicateLoginException ex)
+                {
+                    Console.WriteLine($"Ошибка регистрации: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Неожиданная ошибка: {ex.Message}");
                 }
             }
         }

@@ -1,52 +1,50 @@
 using System;
+using TodoApp.Exceptions;
 using TodoApp.Models;
 using TodoApp.Services;
 
 namespace TodoApp.Commands
 {
-	public class StatusCommand : IUndoableCommand
-	{
-		private int _index;
-		private TodoStatus _newStatus;
-		private TodoStatus _oldStatus;
-		private TodoList _todos;
+    public class StatusCommand : IUndoableCommand
+    {
+        private int _index;
+        private TodoStatus _newStatus;
+        private TodoStatus _oldStatus;
+        private TodoList _todos;
 
-		public StatusCommand(int index, TodoStatus status)
-		{
-			_index = index;
-			_newStatus = status;
-		}
+        public StatusCommand(int index, TodoStatus status)
+        {
+            _index = index;
+            _newStatus = status;
+        }
 
-		public void Execute()
-		{
-			_todos = AppInfo.GetCurrentTodoList();
-			if (_todos == null) return;
+        public void Execute()
+        {
+            _todos = AppInfo.GetCurrentTodoList();
+            if (_todos == null)
+            {
+                throw new AuthenticationException("Пользователь не авторизован");
+            }
 
+            var item = _todos[_index];
 
-			var item = _todos[_index];
+            if (item == null)
+            {
+                throw new TaskNotFoundException($"Задача с индексом {_index} не найдена");
+            }
 
-			if (item == null)
-			{
-				Console.WriteLine($"Ошибка: задача с индексом {_index} не найдена.");
-				return;
-			}
+            _oldStatus = item.Status;
+            _todos.SetStatus(_index, _newStatus);
+            Console.WriteLine($"Статус задачи изменён на: {_newStatus}");
+        }
 
-			_oldStatus = item.Status;
-			_todos.SetStatus(_index, _newStatus);
-			// Событие OnStatusChanged будет вызвано автоматически в TodoList.SetStatus()
+        public void Unexecute()
+        {
+            _todos = AppInfo.GetCurrentTodoList();
+            if (_todos == null) return;
 
-			Console.WriteLine($"Статус задачи изменён на: {_newStatus}");
-		}
-
-		public void Unexecute()
-		{
-			_todos = AppInfo.GetCurrentTodoList();
-			if (_todos == null) return;
-
-
-			_todos.SetStatus(_index, _oldStatus);
-			// Событие OnStatusChanged будет вызвано автоматически в TodoList.SetStatus()
-			Console.WriteLine("Отменено изменение статуса");
-		}
-	}
+            _todos.SetStatus(_index, _oldStatus);
+            Console.WriteLine("Отменено изменение статуса");
+        }
+    }
 }

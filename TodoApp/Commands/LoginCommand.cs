@@ -1,4 +1,5 @@
 using System;
+using TodoApp.Exceptions;
 using TodoApp.Models;
 using TodoApp.Services;
 
@@ -17,6 +18,11 @@ namespace TodoApp.Commands
 
         public void Execute()
         {
+            if (string.IsNullOrWhiteSpace(_login) || string.IsNullOrWhiteSpace(_password))
+            {
+                throw new InvalidArgumentException("Логин и пароль не могут быть пустыми");
+            }
+
             var profile = FileManager.LoadProfile(_login, _password);
             if (profile != null)
             {
@@ -38,7 +44,7 @@ namespace TodoApp.Commands
             }
             else
             {
-                Console.WriteLine("Неверный логин или пароль");
+                throw new AuthenticationException("Неверный логин или пароль");
             }
         }
     }

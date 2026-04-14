@@ -1,5 +1,4 @@
 using System;
-using TodoApp.Models;
 using TodoApp.Services;
 
 namespace TodoApp.Commands
@@ -17,6 +16,12 @@ namespace TodoApp.Commands
         {
             if (_logout)
             {
+                if (AppInfo.CurrentProfile == null)
+                {
+                    Console.WriteLine("Вы не авторизованы");
+                    return;
+                }
+                
                 AppInfo.CurrentProfile = null;
                 AppInfo.ClearUndoRedo();
                 Console.WriteLine("Вы вышли из профиля.");

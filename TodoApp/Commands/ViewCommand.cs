@@ -1,5 +1,5 @@
 using System;
-using System.Text;
+using TodoApp.Exceptions;
 using TodoApp.Models;
 using TodoApp.Services;
 
@@ -21,15 +21,18 @@ namespace TodoApp.Commands
         public void Execute()
         {
             var todos = AppInfo.GetCurrentTodoList();
-            if (todos == null || todos.Count == 0)
+            if (todos == null)
+            {
+                throw new AuthenticationException("Пользователь не авторизован");
+            }
+            
+            if (todos.Count == 0)
             {
                 Console.WriteLine("Список задач пуст.");
                 return;
             }
 
-			Console.WriteLine(todos.GetTable(_showIndex, _showStatus, _showDate));
-		}
-
-
+            Console.WriteLine(todos.GetTable(_showIndex, _showStatus, _showDate));
+        }
     }
 }

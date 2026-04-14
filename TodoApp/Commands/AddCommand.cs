@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TodoApp.Exceptions;
 using TodoApp.Models;
 using TodoApp.Services;
 
@@ -21,17 +22,23 @@ namespace TodoApp.Commands
         public void Execute()
         {
             _todos = AppInfo.GetCurrentTodoList();
-            if (_todos == null) return;
+            if (_todos == null)
+            {
+                throw new AuthenticationException("Пользователь не авторизован");
+            }
 
             if (_isMultiline)
             {
                 _text = ReadMultilineInput();
             }
 
+            if (string.IsNullOrWhiteSpace(_text))
+            {
+                throw new InvalidArgumentException("Текст задачи не может быть пустым");
+            }
+
             _addedItem = new TodoItem(_text);
             _todos.Add(_addedItem);
-            // Событие OnTodoAdded будет вызвано автоматически в TodoList.Add()
-
             Console.WriteLine($"Задача добавлена: {_text}");
         }
 
@@ -40,13 +47,10 @@ namespace TodoApp.Commands
             _todos = AppInfo.GetCurrentTodoList();
             if (_todos == null || _addedItem == null) return;
 
-            // Remove the last added item
             var items = _todos.GetAll();
             if (items.Count > 0 && items[items.Count - 1] == _addedItem)
             {
                 _todos.Delete(_todos.Count - 1);
-                // Событие OnTodoDeleted будет вызвано автоматически в TodoList.Delete()
-
                 Console.WriteLine("Отменено добавление задачи");
             }
         }

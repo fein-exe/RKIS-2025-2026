@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using TodoApp.Commands;
+using TodoApp.Exceptions;
 using TodoApp.Models;
 
 namespace TodoApp.Services
@@ -40,12 +41,14 @@ namespace TodoApp.Services
         {
             if (string.IsNullOrWhiteSpace(inputString))
             {
-                return new HelpCommand();
+                throw new InvalidCommandException("Команда не может быть пустой");
             }
 
             var parts = SplitCommand(inputString);
             if (parts.Length == 0)
-                return new HelpCommand();
+            {
+                throw new InvalidCommandException("Не удалось разобрать команду");
+            }
 
             string command = parts[0].ToLower();
             var args = parts.Skip(1).ToArray();
@@ -56,15 +59,17 @@ namespace TodoApp.Services
                 {
                     return _commandHandlers[command](args);
                 }
-                catch
+                catch (Exception ex) when (ex is InvalidArgumentException || ex is TaskNotFoundException)
                 {
-                    Console.WriteLine($"Ошибка при выполнении команды '{command}'");
-                    return new HelpCommand();
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidCommandException($"Ошибка при выполнении команды '{command}': {ex.Message}");
                 }
             }
 
-            Console.WriteLine($"Неизвестная команда: '{command}'. Введите 'help' для справки.");
-            return new HelpCommand();
+            throw new InvalidCommandException($"Неизвестная команда: '{command}'. Введите 'help' для справки.");
         }
 
         private static ICommand ParseProfileCommand(string[] args)
@@ -103,27 +108,29 @@ namespace TodoApp.Services
 
         private static ICommand ParseReadCommand(string[] args)
         {
-            if (args.Length > 0 && int.TryParse(args[0], out int index))
+            if (args.Length == 0)
             {
-                return new ReadCommand(index);
+                throw new InvalidArgumentException("Используйте: read <индекс>");
             }
 
-            Console.WriteLine("Используйте: read <индекс>");
-            return new HelpCommand();
+            if (!int.TryParse(args[0], out int index))
+            {
+                throw new InvalidArgumentException("Индекс должен быть числом");
+            }
+
+            return new ReadCommand(index);
         }
 
         private static ICommand ParseStatusCommand(string[] args)
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("Используйте: status <индекс> <статус>");
-                return new HelpCommand();
+                throw new InvalidArgumentException("Используйте: status <индекс> <статус>");
             }
 
             if (!int.TryParse(args[0], out int index))
             {
-                Console.WriteLine("Индекс должен быть числом.");
-                return new HelpCommand();
+                throw new InvalidArgumentException("Индекс должен быть числом");
             }
 
             string statusStr = args[1].ToLower();
@@ -132,22 +139,19 @@ namespace TodoApp.Services
                 return new StatusCommand(index, status);
             }
 
-            Console.WriteLine("Неизвестный статус. Доступные: NotStarted, InProgress, Completed, Postponed, Failed");
-            return new HelpCommand();
+            throw new InvalidArgumentException("Неизвестный статус. Доступные: NotStarted, InProgress, Completed, Postponed, Failed");
         }
 
         private static ICommand ParseUpdateCommand(string[] args)
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("Используйте: update <индекс> \"новый текст\"");
-                return new HelpCommand();
+                throw new InvalidArgumentException("Используйте: update <индекс> \"новый текст\"");
             }
 
             if (!int.TryParse(args[0], out int index))
             {
-                Console.WriteLine("Индекс должен быть числом.");
-                return new HelpCommand();
+                throw new InvalidArgumentException("Индекс должен быть числом");
             }
 
             string newText = string.Join(" ", args.Skip(1)).Trim('"');
@@ -156,10 +160,14 @@ namespace TodoApp.Services
 
         private static ICommand ParseDeleteCommand(string[] args)
         {
-            if (args.Length == 0 || !int.TryParse(args[0], out int index))
+            if (args.Length == 0)
             {
-                Console.WriteLine("Используйте: delete <индекс>");
-                return new HelpCommand();
+                throw new InvalidArgumentException("Используйте: delete <индекс>");
+            }
+
+            if (!int.TryParse(args[0], out int index))
+            {
+                throw new InvalidArgumentException("Индекс должен быть числом");
             }
 
             return new DeleteCommand(index);
@@ -185,6 +193,10 @@ namespace TodoApp.Services
                         parameters[key] = "true";
                     }
                 }
+                else
+                {
+                    throw new InvalidArgumentException($"Неизвестный параметр: {args[i]}. Используйте флаги --");
+                }
             }
             
             return new SearchCommand(parameters);
@@ -194,8 +206,7 @@ namespace TodoApp.Services
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("Используйте: login <логин> <пароль>");
-                return new HelpCommand();
+                throw new InvalidArgumentException("Используйте: login <логин> <пароль>");
             }
 
             return new LoginCommand(args[0], args[1]);
@@ -205,14 +216,12 @@ namespace TodoApp.Services
         {
             if (args.Length < 5)
             {
-                Console.WriteLine("Используйте: register <логин> <пароль> <имя> <фамилия> <год рождения>");
-                return new HelpCommand();
+                throw new InvalidArgumentException("Используйте: register <логин> <пароль> <имя> <фамилия> <год рождения>");
             }
 
             if (!int.TryParse(args[4], out int birthYear))
             {
-                Console.WriteLine("Год рождения должен быть числом");
-                return new HelpCommand();
+                throw new InvalidArgumentException("Год рождения должен быть числом");
             }
 
             return new RegisterCommand(args[0], args[1], args[2], args[3], birthYear);
