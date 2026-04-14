@@ -9,19 +9,45 @@ namespace TodoApp
     {
         static void Main(string[] args)
         {
-            var (aesKey, aesIV) = EncryptionService.GetOrCreateKeys();
+            Console.WriteLine("Выберите режим работы:");
+            Console.WriteLine("1. Локальное хранилище");
+            Console.WriteLine("2. Сетевое хранилище (с сервером)");
+            Console.Write("Выберите: ");
+            string storageChoice = Console.ReadLine();
+
+            byte[] aesKey;
+            byte[] aesIV;
             
-            var fileManager = new FileManager("data", aesKey, aesIV);
-            AppInfo.DataStorage = fileManager;
+            if (storageChoice == "2")
+            {
+                (aesKey, aesIV) = EncryptionService.GetOrCreateKeys();
+                var apiStorage = new ApiDataStorage("http://localhost:5000", aesKey, aesIV);
+                AppInfo.DataStorage = apiStorage;
+                Console.WriteLine("Используется сетевое хранилище\n");
+            }
+            else
+            {
+                (aesKey, aesIV) = EncryptionService.GetOrCreateKeys();
+                var fileManager = new FileManager("data", aesKey, aesIV);
+                AppInfo.DataStorage = fileManager;
+                Console.WriteLine("Используется локальное хранилище\n");
+            }
             
             try
             {
-                var profiles = fileManager.LoadProfiles();
+                var profiles = AppInfo.DataStorage.LoadProfiles();
                 AppInfo.Profiles = new System.Collections.Generic.List<Models.Profile>(profiles);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка загрузки профилей: {ex.Message}");
+                if (storageChoice == "2" && ex.Message.Contains("недоступен"))
+                {
+                    Console.WriteLine("Предупреждение: Сервер недоступен, загружены локальные профили");
+                }
+                else
+                {
+                    Console.WriteLine($"Ошибка загрузки профилей: {ex.Message}");
+                }
                 AppInfo.Profiles = new System.Collections.Generic.List<Models.Profile>();
             }
             

@@ -36,6 +36,7 @@ namespace TodoApp.Services
                 ["login"] = args => ParseLoginCommand(args),
                 ["register"] = args => ParseRegisterCommand(args),
                 ["load"] = args => ParseLoadCommand(args),
+                ["sync"] = args => ParseSyncCommand(args),
             };
         }
 
@@ -257,6 +258,14 @@ namespace TodoApp.Services
             }
 
             return new LoadCommand(downloadsCount, fileSize);
+        }
+
+        private static ICommand ParseSyncCommand(string[] args)
+        {
+            bool pull = args.Any(a => a == "--pull");
+            bool push = args.Any(a => a == "--push");
+            
+            return new SyncCommand(pull, push);
         }
 
         private static string[] SplitCommand(string input)
