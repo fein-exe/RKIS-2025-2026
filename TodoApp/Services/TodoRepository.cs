@@ -8,53 +8,59 @@ namespace TodoApp.Services
 {
     public class TodoRepository
     {
+        private readonly AppDbContext _context;
+
+        public TodoRepository()
+        {
+            _context = new AppDbContext();
+        }
+
+        public TodoRepository(AppDbContext context)
+        {
+            _context = context;
+        }
+
         public List<TodoItem> GetAll(Guid profileId)
         {
-            using var context = new AppDbContext();
-            return context.Todos.Where(t => t.ProfileId == profileId).ToList();
+            return _context.Todos.Where(t => t.ProfileId == profileId).ToList();
         }
 
         public TodoItem? GetById(int id, Guid profileId)
         {
-            using var context = new AppDbContext();
-            return context.Todos.FirstOrDefault(t => t.Id == id && t.ProfileId == profileId);
+            return _context.Todos.FirstOrDefault(t => t.Id == id && t.ProfileId == profileId);
         }
 
         public void Add(TodoItem item, Guid profileId)
         {
-            using var context = new AppDbContext();
             item.ProfileId = profileId;
-            context.Todos.Add(item);
-            context.SaveChanges();
+            _context.Todos.Add(item);
+            _context.SaveChanges();
         }
 
         public void Update(TodoItem item)
         {
-            using var context = new AppDbContext();
-            context.Todos.Update(item);
-            context.SaveChanges();
+            _context.Todos.Update(item);
+            _context.SaveChanges();
         }
 
         public void Delete(int id, Guid profileId)
         {
-            using var context = new AppDbContext();
-            var item = context.Todos.FirstOrDefault(t => t.Id == id && t.ProfileId == profileId);
+            var item = _context.Todos.FirstOrDefault(t => t.Id == id && t.ProfileId == profileId);
             if (item != null)
             {
-                context.Todos.Remove(item);
-                context.SaveChanges();
+                _context.Todos.Remove(item);
+                _context.SaveChanges();
             }
         }
 
         public void SetStatus(int id, TodoStatus status, Guid profileId)
         {
-            using var context = new AppDbContext();
-            var item = context.Todos.FirstOrDefault(t => t.Id == id && t.ProfileId == profileId);
+            var item = _context.Todos.FirstOrDefault(t => t.Id == id && t.ProfileId == profileId);
             if (item != null)
             {
                 item.SetStatus(status);
-                context.Todos.Update(item);
-                context.SaveChanges();
+                _context.Todos.Update(item);
+                _context.SaveChanges();
             }
         }
     }

@@ -8,9 +8,16 @@ namespace TodoApp.Data
         public DbSet<TodoItem> Todos => Set<TodoItem>();
         public DbSet<Profile> Profiles => Set<Profile>();
 
+        public AppDbContext() { }
+
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Data Source=todos.db");
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlite("Data Source=todos.db");
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

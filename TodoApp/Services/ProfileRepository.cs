@@ -8,59 +8,63 @@ namespace TodoApp.Services
 {
     public class ProfileRepository
     {
+        private readonly AppDbContext _context;
+
+        public ProfileRepository()
+        {
+            _context = new AppDbContext();
+        }
+
+        public ProfileRepository(AppDbContext context)
+        {
+            _context = context;
+        }
+
         public List<Profile> GetAll()
         {
-            using var context = new AppDbContext();
-            return context.Profiles.ToList();
+            return _context.Profiles.ToList();
         }
 
         public Profile? GetById(Guid id)
         {
-            using var context = new AppDbContext();
-            return context.Profiles.Find(id);
+            return _context.Profiles.Find(id);
         }
 
         public Profile? GetByLogin(string login)
         {
-            using var context = new AppDbContext();
-            return context.Profiles.FirstOrDefault(p => p.Login == login);
+            return _context.Profiles.FirstOrDefault(p => p.Login == login);
         }
 
         public Profile? GetByLoginAndPassword(string login, string password)
         {
-            using var context = new AppDbContext();
-            return context.Profiles.FirstOrDefault(p => p.Login == login && p.Password == password);
+            return _context.Profiles.FirstOrDefault(p => p.Login == login && p.Password == password);
         }
 
         public void Add(Profile profile)
         {
-            using var context = new AppDbContext();
-            context.Profiles.Add(profile);
-            context.SaveChanges();
+            _context.Profiles.Add(profile);
+            _context.SaveChanges();
         }
 
         public void Update(Profile profile)
         {
-            using var context = new AppDbContext();
-            context.Profiles.Update(profile);
-            context.SaveChanges();
+            _context.Profiles.Update(profile);
+            _context.SaveChanges();
         }
 
         public void Delete(Guid id)
         {
-            using var context = new AppDbContext();
-            var profile = context.Profiles.Find(id);
+            var profile = _context.Profiles.Find(id);
             if (profile != null)
             {
-                context.Profiles.Remove(profile);
-                context.SaveChanges();
+                _context.Profiles.Remove(profile);
+                _context.SaveChanges();
             }
         }
 
         public bool LoginExists(string login)
         {
-            using var context = new AppDbContext();
-            return context.Profiles.Any(p => p.Login == login);
+            return _context.Profiles.Any(p => p.Login == login);
         }
     }
 }
