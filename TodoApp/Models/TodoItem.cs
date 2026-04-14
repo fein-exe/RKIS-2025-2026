@@ -1,12 +1,30 @@
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TodoApp.Models
 {
     public class TodoItem
     {
-        public string Text { get; private set; }
+        [Key]
+        public int Id { get; set; }
+        
+        [Required]
+        public string Text { get; private set; } = string.Empty;
+        
+        [Required]
         public TodoStatus Status { get; set; }
+        
+        [Required]
         public DateTime LastUpdate { get; set; }
+        
+        [Required]
+        public Guid ProfileId { get; set; }
+        
+        [ForeignKey("ProfileId")]
+        public virtual Profile Profile { get; set; } = null!;
+
+        public TodoItem() { }
 
         public TodoItem(string text)
         {
@@ -27,13 +45,10 @@ namespace TodoApp.Models
             LastUpdate = DateTime.Now;
         }
 
-        public string GetShortInfo()
-        {
-			string shortText = Text.Length > 30 
-                ? Text.Replace("\n", " ").Substring(0, 30) + "..." 
-                : Text;
-            return shortText;
-        }
+        [NotMapped]
+        public string ShortText => Text.Length > 30 ? Text.Replace("\n", " ").Substring(0, 30) + "..." : Text;
+
+        public string GetShortInfo() => ShortText;
 
         public string GetFullInfo()
         {

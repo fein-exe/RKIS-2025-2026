@@ -1,6 +1,5 @@
 using System;
 using TodoApp.Exceptions;
-using TodoApp.Models;
 using TodoApp.Services;
 
 namespace TodoApp.Commands
@@ -16,19 +15,18 @@ namespace TodoApp.Commands
 
         public void Execute()
         {
-            var todos = AppInfo.GetCurrentTodoList();
-            if (todos == null)
+            if (AppInfo.CurrentProfile == null)
             {
                 throw new AuthenticationException("Пользователь не авторизован");
             }
 
-            var item = todos[_index];
-
-            if (item == null)
+            var todos = AppInfo.GetCurrentTodos();
+            if (_index < 1 || _index > todos.Count)
             {
                 throw new TaskNotFoundException($"Задача с индексом {_index} не найдена");
             }
 
+            var item = todos[_index - 1];
             Console.WriteLine(item.GetFullInfo());
         }
     }

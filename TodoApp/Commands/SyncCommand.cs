@@ -49,31 +49,9 @@ namespace TodoApp.Commands
             {
                 Console.WriteLine("Синхронизация с сервером (PULL)...");
                 
-                var profiles = AppInfo.DataStorage.LoadProfiles();
-                var currentProfile = profiles.FirstOrDefault(p => p.Id == AppInfo.CurrentProfile.Id);
-                
-                if (currentProfile != null)
-                {
-                    var todos = AppInfo.DataStorage.LoadTodos(currentProfile.Id);
-                    
-                    var todoList = AppInfo.GetCurrentTodoList();
-                    if (todoList != null)
-                    {
-                        var existingTodos = todoList.GetAll();
-                        foreach (var todo in existingTodos.ToList())
-                        {
-                            todoList.Delete(0);
-                        }
-                        
-                        foreach (var todo in todos)
-                        {
-                            todoList.Add(todo);
-                        }
-                        
-                        Console.WriteLine($"Загружено {todos.Count()} задач с сервера");
-                    }
-                }
-                
+                // Для синхронизации нужно реализовать API клиент
+                // Пока выводим сообщение
+                Console.WriteLine("Функция синхронизации временно отключена при работе с БД");
                 Console.WriteLine("Синхронизация завершена");
             }
             catch (Exception ex) when (ex.Message.Contains("недоступен"))
@@ -92,13 +70,9 @@ namespace TodoApp.Commands
             {
                 Console.WriteLine("Синхронизация с сервером (PUSH)...");
                 
-                var todoList = AppInfo.GetCurrentTodoList();
-                if (todoList != null)
-                {
-                    AppInfo.DataStorage.SaveTodos(AppInfo.CurrentProfile.Id, todoList.GetAll());
-                    Console.WriteLine($"Отправлено {todoList.Count} задач на сервер");
-                }
-                
+                // Для синхронизации нужно реализовать API клиент
+                // Пока выводим сообщение
+                Console.WriteLine("Функция синхронизации временно отключена при работе с БД");
                 Console.WriteLine("Синхронизация завершена");
             }
             catch (Exception ex) when (ex.Message.Contains("недоступен"))

@@ -18,19 +18,19 @@ namespace TodoApp.Commands
 
         public void Execute()
         {
-            var todos = AppInfo.GetCurrentTodoList();
-            if (todos == null)
+            if (AppInfo.CurrentProfile == null)
             {
                 throw new AuthenticationException("Пользователь не авторизован");
             }
 
+            var todos = AppInfo.GetCurrentTodos();
             if (todos.Count == 0)
             {
                 Console.WriteLine("Ничего не найдено");
                 return;
             }
 
-            var query = todos.GetAll().AsEnumerable();
+            var query = todos.AsEnumerable();
 
             var validFlags = new[] { "contains", "starts-with", "ends-with", "from", "to", "status", "sort", "desc", "top" };
             
@@ -130,7 +130,7 @@ namespace TodoApp.Commands
             for (int i = 0; i < todos.Count; i++)
             {
                 var todo = todos[i];
-                string shortText = todo.Text.Length > 30 ? todo.Text.Substring(0, 27) + "..." : todo.Text;
+                string shortText = todo.ShortText;
                 shortText = shortText.Replace("\n", " ");
                 
                 Console.WriteLine("║ {0,-4} ║ {1,-31} ║ {2,-14} ║ {3,-18} ║", 

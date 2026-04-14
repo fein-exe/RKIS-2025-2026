@@ -9,7 +9,6 @@ namespace TodoApp.Commands
     {
         private int _index;
         private TodoItem? _deletedItem;
-        private TodoList? _todos;
 
         public DeleteCommand(int index)
         {
@@ -18,29 +17,26 @@ namespace TodoApp.Commands
 
         public void Execute()
         {
-            _todos = AppInfo.GetCurrentTodoList();
-            if (_todos == null)
+            if (AppInfo.CurrentProfile == null)
             {
                 throw new AuthenticationException("Пользователь не авторизован");
             }
 
-            _deletedItem = _todos[_index];
-
-            if (_deletedItem == null)
+            var todos = AppInfo.GetCurrentTodos();
+            if (_index < 1 || _index > todos.Count)
             {
                 throw new TaskNotFoundException($"Задача с индексом {_index} не найдена");
             }
 
-            _todos.Delete(_index);
+            _deletedItem = todos[_index - 1];
+            AppInfo.TodoRepo.Delete(_deletedItem.Id, AppInfo.CurrentProfile.Id);
             Console.WriteLine($"Задача удалена: {_deletedItem.Text}");
         }
 
         public void Unexecute()
         {
-            _todos = AppInfo.GetCurrentTodoList();
-            if (_todos == null || _deletedItem == null) return;
-
-            _todos.Add(_deletedItem);
+            if (_deletedItem == null) return;
+            AppInfo.TodoRepo.Add(_deletedItem, AppInfo.CurrentProfile.Id);
             Console.WriteLine("Отменено удаление задачи");
         }
     }

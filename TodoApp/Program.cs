@@ -9,49 +9,8 @@ namespace TodoApp
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Выберите режим работы:");
-            Console.WriteLine("1. Локальное хранилище");
-            Console.WriteLine("2. Сетевое хранилище (с сервером)");
-            Console.Write("Выберите: ");
-            string storageChoice = Console.ReadLine();
-
-            byte[] aesKey;
-            byte[] aesIV;
-            
-            if (storageChoice == "2")
-            {
-                (aesKey, aesIV) = EncryptionService.GetOrCreateKeys();
-                var apiStorage = new ApiDataStorage("http://localhost:5000", aesKey, aesIV);
-                AppInfo.DataStorage = apiStorage;
-                Console.WriteLine("Используется сетевое хранилище\n");
-            }
-            else
-            {
-                (aesKey, aesIV) = EncryptionService.GetOrCreateKeys();
-                var fileManager = new FileManager("data", aesKey, aesIV);
-                AppInfo.DataStorage = fileManager;
-                Console.WriteLine("Используется локальное хранилище\n");
-            }
-            
-            try
-            {
-                var profiles = AppInfo.DataStorage.LoadProfiles();
-                AppInfo.Profiles = new System.Collections.Generic.List<Models.Profile>(profiles);
-            }
-            catch (Exception ex)
-            {
-                if (storageChoice == "2" && ex.Message.Contains("недоступен"))
-                {
-                    Console.WriteLine("Предупреждение: Сервер недоступен, загружены локальные профили");
-                }
-                else
-                {
-                    Console.WriteLine($"Ошибка загрузки профилей: {ex.Message}");
-                }
-                AppInfo.Profiles = new System.Collections.Generic.List<Models.Profile>();
-            }
-            
-            Console.WriteLine("Добро пожаловать в TodoApp!\n");
+            Console.WriteLine("Добро пожаловать в TodoApp!");
+            Console.WriteLine("Используется база данных SQLite\n");
 
             while (AppInfo.CurrentProfile == null)
             {

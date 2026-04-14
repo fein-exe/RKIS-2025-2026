@@ -10,7 +10,7 @@ namespace TodoApp.Commands
         private int _index;
         private string _newText;
         private string? _oldText;
-        private TodoList? _todos;
+        private TodoItem? _item;
 
         public UpdateCommand(int index, string newText)
         {
@@ -20,15 +20,13 @@ namespace TodoApp.Commands
 
         public void Execute()
         {
-            _todos = AppInfo.GetCurrentTodoList();
-            if (_todos == null)
+            if (AppInfo.CurrentProfile == null)
             {
                 throw new AuthenticationException("Пользователь не авторизован");
             }
 
-            var item = _todos[_index];
-
-            if (item == null)
+            var todos = AppInfo.GetCurrentTodos();
+            if (_index < 1 || _index > todos.Count)
             {
                 throw new TaskNotFoundException($"Задача с индексом {_index} не найдена");
             }
@@ -38,17 +36,18 @@ namespace TodoApp.Commands
                 throw new InvalidArgumentException("Текст задачи не может быть пустым");
             }
 
-            _oldText = item.Text;
-            _todos.UpdateItem(_index, _newText);
+            _item = todos[_index - 1];
+            _oldText = _item.Text;
+            _item.UpdateText(_newText);
+            AppInfo.TodoRepo.Update(_item);
             Console.WriteLine("Задача обновлена.");
         }
 
         public void Unexecute()
         {
-            _todos = AppInfo.GetCurrentTodoList();
-            if (_todos == null || _oldText == null) return;
-
-            _todos.UpdateItem(_index, _oldText);
+            if (_item == null || _oldText == null) return;
+            _item.UpdateText(_oldText);
+            AppInfo.TodoRepo.Update(_item);
             Console.WriteLine("Отменено обновление задачи");
         }
     }

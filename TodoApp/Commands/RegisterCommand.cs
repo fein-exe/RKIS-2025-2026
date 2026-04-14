@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using TodoApp.Exceptions;
 using TodoApp.Models;
 using TodoApp.Services;
@@ -35,25 +34,15 @@ namespace TodoApp.Commands
                 throw new InvalidArgumentException($"Год рождения должен быть от 1900 до {DateTime.Now.Year}");
             }
 
-            var existing = AppInfo.Profiles.FirstOrDefault(p => p.Login == _login);
-            if (existing != null)
+            if (AppInfo.ProfileRepo.LoginExists(_login))
             {
                 throw new DuplicateLoginException($"Пользователь с логином '{_login}' уже существует");
             }
 
             var profile = new Profile(_login, _password, _firstName, _lastName, _birthYear);
-            AppInfo.Profiles.Add(profile);
+            AppInfo.ProfileRepo.Add(profile);
             
-            try
-            {
-                AppInfo.DataStorage.SaveProfiles(AppInfo.Profiles);
-                Console.WriteLine($"Пользователь {_login} успешно зарегистрирован");
-            }
-            catch (Exception ex)
-            {
-                AppInfo.Profiles.Remove(profile);
-                throw new InvalidOperationException($"Ошибка сохранения профиля: {ex.Message}", ex);
-            }
+            Console.WriteLine($"Пользователь {_login} успешно зарегистрирован");
         }
     }
 }

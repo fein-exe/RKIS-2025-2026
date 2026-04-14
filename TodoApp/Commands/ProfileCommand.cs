@@ -22,15 +22,6 @@ namespace TodoApp.Commands
                     return;
                 }
                 
-                if (AppInfo.CurrentProfile != null)
-                {
-                    var todoList = AppInfo.GetCurrentTodoList();
-                    if (todoList != null)
-                    {
-                        AppInfo.DataStorage.SaveTodos(AppInfo.CurrentProfile.Id, todoList.GetAll());
-                    }
-                }
-                
                 AppInfo.CurrentProfile = null;
                 AppInfo.ClearUndoRedo();
                 Console.WriteLine("Вы вышли из профиля.");
