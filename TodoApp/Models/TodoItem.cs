@@ -1,6 +1,8 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using TodoApp.Interfaces;
+using TodoApp.Services;
 
 namespace TodoApp.Models
 {
@@ -24,25 +26,30 @@ namespace TodoApp.Models
         [ForeignKey("ProfileId")]
         public virtual Profile Profile { get; set; } = null!;
 
-        public TodoItem() { }
+        private readonly IClock _clock;
 
-        public TodoItem(string text)
+        public TodoItem(string text) : this(text, new SystemClock())
         {
+        }
+
+        public TodoItem(string text, IClock clock)
+        {
+            _clock = clock;
             Text = text;
             Status = TodoStatus.NotStarted;
-            LastUpdate = DateTime.Now;
+            LastUpdate = _clock.Now;
         }
 
         public void UpdateText(string newText)
         {
             Text = newText;
-            LastUpdate = DateTime.Now;
+            LastUpdate = _clock.Now;
         }
 
         public void SetStatus(TodoStatus status)
         {
             Status = status;
-            LastUpdate = DateTime.Now;
+            LastUpdate = _clock.Now;
         }
 
         [NotMapped]
