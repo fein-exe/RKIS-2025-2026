@@ -34,6 +34,7 @@ namespace TodoApp.Services
                 ["search"] = args => ParseSearchCommand(args),
                 ["login"] = args => ParseLoginCommand(args),
                 ["register"] = args => ParseRegisterCommand(args),
+                ["load"] = args => ParseLoadCommand(args),
             };
         }
 
@@ -225,6 +226,36 @@ namespace TodoApp.Services
             }
 
             return new RegisterCommand(args[0], args[1], args[2], args[3], birthYear);
+        }
+
+        private static ICommand ParseLoadCommand(string[] args)
+        {
+            if (args.Length < 2)
+            {
+                throw new InvalidArgumentException("Используйте: load <количество_загрузок> <размер_файла>");
+            }
+
+            if (!int.TryParse(args[0], out int downloadsCount))
+            {
+                throw new InvalidArgumentException("Количество загрузок должно быть числом");
+            }
+
+            if (!int.TryParse(args[1], out int fileSize))
+            {
+                throw new InvalidArgumentException("Размер файла должен быть числом");
+            }
+
+            if (downloadsCount <= 0)
+            {
+                throw new InvalidArgumentException("Количество загрузок должно быть больше 0");
+            }
+
+            if (fileSize <= 0)
+            {
+                throw new InvalidArgumentException("Размер файла должен быть больше 0");
+            }
+
+            return new LoadCommand(downloadsCount, fileSize);
         }
 
         private static string[] SplitCommand(string input)
