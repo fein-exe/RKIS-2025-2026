@@ -21,45 +21,60 @@ namespace TodoApp
                 
                 string choice = Console.ReadLine();
                 
-                if (choice == "1")
+                try
                 {
-                    Console.Write("Логин: ");
-                    string login = Console.ReadLine();
-                    Console.Write("Пароль: ");
-                    string password = Console.ReadLine();
-                    
-                    var command = new LoginCommand(login, password);
-                    command.Execute();
-                }
-                else if (choice == "2")
-                {
-                    Console.Write("Логин: ");
-                    string login = Console.ReadLine();
-                    Console.Write("Пароль: ");
-                    string password = Console.ReadLine();
-                    Console.Write("Имя: ");
-                    string firstName = Console.ReadLine();
-                    Console.Write("Фамилия: ");
-                    string lastName = Console.ReadLine();
-                    Console.Write("Год рождения: ");
-                    
-                    if (int.TryParse(Console.ReadLine(), out int birthYear))
+                    if (choice == "1")
                     {
-                        var command = new RegisterCommand(login, password, firstName, lastName, birthYear);
+                        Console.Write("Логин: ");
+                        string login = Console.ReadLine();
+                        Console.Write("Пароль: ");
+                        string password = Console.ReadLine();
+                        
+                        var command = new LoginCommand(login, password);
                         command.Execute();
+                    }
+                    else if (choice == "2")
+                    {
+                        Console.Write("Логин: ");
+                        string login = Console.ReadLine();
+                        Console.Write("Пароль: ");
+                        string password = Console.ReadLine();
+                        Console.Write("Имя: ");
+                        string firstName = Console.ReadLine();
+                        Console.Write("Фамилия: ");
+                        string lastName = Console.ReadLine();
+                        Console.Write("Год рождения: ");
+                        
+                        if (int.TryParse(Console.ReadLine(), out int birthYear))
+                        {
+                            var command = new RegisterCommand(login, password, firstName, lastName, birthYear);
+                            command.Execute();
+                        }
+                        else
+                        {
+                            Console.WriteLine("Неверный год рождения");
+                        }
+                    }
+                    else if (choice == "3")
+                    {
+                        return;
                     }
                     else
                     {
-                        Console.WriteLine("Неверный год рождения");
+                        Console.WriteLine("Неверный выбор");
                     }
                 }
-                else if (choice == "3")
+                catch (AuthenticationException ex)
                 {
-                    return;
+                    Console.WriteLine($"Ошибка авторизации: {ex.Message}");
                 }
-                else
+                catch (DuplicateLoginException ex)
                 {
-                    Console.WriteLine("Неверный выбор");
+                    Console.WriteLine($"Ошибка регистрации: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка: {ex.Message}");
                 }
                 
                 Console.WriteLine();

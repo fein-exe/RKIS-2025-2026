@@ -38,6 +38,10 @@ namespace TodoApp.Commands
             _addedItem = new TodoItem(_text);
             AppInfo.TodoRepo.Add(_addedItem, AppInfo.CurrentProfile.Id);
             
+            // Добавляем команду в стек отмены
+            AppInfo.UndoStack.Push(this);
+            AppInfo.RedoStack.Clear();
+            
             Console.WriteLine($"Задача добавлена: {_text}");
         }
 
