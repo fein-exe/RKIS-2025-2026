@@ -10,7 +10,7 @@ namespace TodoApp.Commands
         private int _index;
         private TodoStatus _newStatus;
         private TodoStatus _oldStatus;
-        private TodoList _todos;
+        private TodoList? _todos;
 
         public StatusCommand(int index, TodoStatus status)
         {

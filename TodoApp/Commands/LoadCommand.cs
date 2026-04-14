@@ -10,7 +10,7 @@ namespace TodoApp.Commands
         private readonly int _downloadsCount;
         private readonly int _fileSize;
         private static readonly object _consoleLock = new object();
-        private string[] _progressLines;
+        private string[]? _progressLines;
 
         public LoadCommand(int downloadsCount, int fileSize)
         {
@@ -61,12 +61,15 @@ namespace TodoApp.Commands
                 
                 lock (_consoleLock)
                 {
-                    _progressLines[index] = downloadBar;
-                    Console.Clear();
-                    Console.WriteLine($"\nЗапуск {_downloadsCount} параллельных загрузок...\n");
-                    for (int i = 0; i < _downloadsCount; i++)
+                    if (_progressLines != null)
                     {
-                        Console.WriteLine(_progressLines[i]);
+                        _progressLines[index] = downloadBar;
+                        Console.Clear();
+                        Console.WriteLine($"\nЗапуск {_downloadsCount} параллельных загрузок...\n");
+                        for (int i = 0; i < _downloadsCount; i++)
+                        {
+                            Console.WriteLine(_progressLines[i]);
+                        }
                     }
                 }
                 

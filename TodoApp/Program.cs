@@ -9,6 +9,22 @@ namespace TodoApp
     {
         static void Main(string[] args)
         {
+            var (aesKey, aesIV) = EncryptionService.GetOrCreateKeys();
+            
+            var fileManager = new FileManager("data", aesKey, aesIV);
+            AppInfo.DataStorage = fileManager;
+            
+            try
+            {
+                var profiles = fileManager.LoadProfiles();
+                AppInfo.Profiles = new System.Collections.Generic.List<Models.Profile>(profiles);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки профилей: {ex.Message}");
+                AppInfo.Profiles = new System.Collections.Generic.List<Models.Profile>();
+            }
+            
             Console.WriteLine("Добро пожаловать в TodoApp!\n");
 
             while (AppInfo.CurrentProfile == null)

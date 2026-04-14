@@ -9,8 +9,8 @@ namespace TodoApp.Commands
     {
         private int _index;
         private string _newText;
-        private string _oldText;
-        private TodoList _todos;
+        private string? _oldText;
+        private TodoList? _todos;
 
         public UpdateCommand(int index, string newText)
         {

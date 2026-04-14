@@ -10,8 +10,8 @@ namespace TodoApp.Commands
     {
         private string _text;
         private bool _isMultiline;
-        private TodoItem _addedItem;
-        private TodoList _todos;
+        private TodoItem? _addedItem;
+        private TodoList? _todos;
 
         public AddCommand(string text, bool isMultiline)
         {
@@ -39,6 +39,12 @@ namespace TodoApp.Commands
 
             _addedItem = new TodoItem(_text);
             _todos.Add(_addedItem);
+            
+            if (AppInfo.CurrentProfile != null)
+            {
+                AppInfo.DataStorage.SaveTodos(AppInfo.CurrentProfile.Id, _todos.GetAll());
+            }
+            
             Console.WriteLine($"Задача добавлена: {_text}");
         }
 
@@ -51,6 +57,12 @@ namespace TodoApp.Commands
             if (items.Count > 0 && items[items.Count - 1] == _addedItem)
             {
                 _todos.Delete(_todos.Count - 1);
+                
+                if (AppInfo.CurrentProfile != null)
+                {
+                    AppInfo.DataStorage.SaveTodos(AppInfo.CurrentProfile.Id, _todos.GetAll());
+                }
+                
                 Console.WriteLine("Отменено добавление задачи");
             }
         }
@@ -63,10 +75,11 @@ namespace TodoApp.Commands
             while (true)
             {
                 Console.Write("> ");
-                string line = Console.ReadLine();
+                string? line = Console.ReadLine();
                 if (line == "!end")
                     break;
-                lines.Add(line);
+                if (!string.IsNullOrEmpty(line))
+                    lines.Add(line);
             }
 
             return string.Join("\n", lines);

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TodoApp.Commands;
+using TodoApp.Interfaces;
 using TodoApp.Models;
 
 namespace TodoApp.Services
@@ -13,8 +13,9 @@ namespace TodoApp.Services
         public static Dictionary<Guid, TodoList> UserTodos { get; set; } = new();
         public static Stack<IUndoableCommand> UndoStack { get; set; } = new();
         public static Stack<IUndoableCommand> RedoStack { get; set; } = new();
+        public static IDataStorage? DataStorage { get; set; }
 
-        public static TodoList GetCurrentTodoList()
+        public static TodoList? GetCurrentTodoList()
         {
             if (CurrentProfile != null && UserTodos.ContainsKey(CurrentProfile.Id))
             {

@@ -2,204 +2,235 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
+using TodoApp.Exceptions;
+using TodoApp.Interfaces;
 using TodoApp.Models;
 
 namespace TodoApp.Services
 {
-    public static class FileManager
+    public class FileManager : IDataStorage
     {
-        private const string DataDir = "data";
-        private const string ProfilesFileName = "profiles.csv";
+        private readonly string _dataDir;
+        private readonly byte[] _aesKey;
+        private readonly byte[] _aesIV;
 
-        public static void EnsureDataDirectory()
+        public FileManager(string dataDir, byte[] aesKey, byte[] aesIV)
         {
-            if (!Directory.Exists(DataDir))
+            _dataDir = dataDir;
+            _aesKey = aesKey;
+            _aesIV = aesIV;
+            EnsureDataDirectory();
+        }
+
+        private void EnsureDataDirectory()
+        {
+            if (!Directory.Exists(_dataDir))
             {
-                Directory.CreateDirectory(DataDir);
+                Directory.CreateDirectory(_dataDir);
             }
         }
 
-        public static void SaveProfile(Profile profile)
+        private string GetProfilesFilePath()
         {
-            EnsureDataDirectory();
-            string filePath = Path.Combine(DataDir, ProfilesFileName);
+            return Path.Combine(_dataDir, "profiles.dat");
+        }
 
-            var profiles = LoadAllProfiles();
-            var existing = profiles.FirstOrDefault(p => p.Id == profile.Id);
+        private string GetTodosFilePath(Guid userId)
+        {
+            return Path.Combine(_dataDir, $"todos_{userId}.dat");
+        }
 
-            if (existing != null)
+        private void EncryptAndWrite(string filePath, string content)
+        {
+            using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            using (var bufferedStream = new BufferedStream(fileStream, 8192))
+            using (var aes = Aes.Create())
             {
-                profiles.Remove(existing);
+                aes.Key = _aesKey;
+                aes.IV = _aesIV;
+                
+                using (var cryptoStream = new CryptoStream(bufferedStream, aes.CreateEncryptor(), CryptoStreamMode.Write))
+                using (var streamWriter = new StreamWriter(cryptoStream, Encoding.UTF8))
+                {
+                    streamWriter.Write(content);
+                }
             }
-            profiles.Add(profile);
-
-            SaveAllProfiles(profiles, filePath);
         }
 
-        public static Profile LoadProfile(string login, string password)
+        private string DecryptAndRead(string filePath)
         {
-            var profiles = LoadAllProfiles();
-            return profiles.FirstOrDefault(p => p.Login == login && p.Password == password);
-        }
-
-        public static List<Profile> LoadAllProfiles()
-        {
-            EnsureDataDirectory();
-            string filePath = Path.Combine(DataDir, ProfilesFileName);
-
-            var profiles = new List<Profile>();
-
             if (!File.Exists(filePath))
+            {
+                return null;
+            }
+
+            try
+            {
+                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                using (var bufferedStream = new BufferedStream(fileStream, 8192))
+                using (var aes = Aes.Create())
+                {
+                    aes.Key = _aesKey;
+                    aes.IV = _aesIV;
+                    
+                    using (var cryptoStream = new CryptoStream(bufferedStream, aes.CreateDecryptor(), CryptoStreamMode.Read))
+                    using (var streamReader = new StreamReader(cryptoStream, Encoding.UTF8))
+                    {
+                        return streamReader.ReadToEnd();
+                    }
+                }
+            }
+            catch (CryptographicException ex)
+            {
+                throw new InvalidOperationException($"Ошибка расшифровки файла {filePath}: {ex.Message}", ex);
+            }
+            catch (IOException ex)
+            {
+                throw new InvalidOperationException($"Ошибка доступа к файлу {filePath}: {ex.Message}", ex);
+            }
+        }
+
+        public void SaveProfiles(IEnumerable<Profile> profiles)
+        {
+            try
+            {
+                var lines = new List<string>();
+                foreach (var profile in profiles)
+                {
+                    string line = $"{profile.Id}|{profile.Login}|{profile.Password}|{profile.FirstName}|{profile.LastName}|{profile.BirthYear}";
+                    lines.Add(line);
+                }
+                
+                string content = string.Join("\n", lines);
+                string filePath = GetProfilesFilePath();
+                EncryptAndWrite(filePath, content);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Не удалось сохранить профили: {ex.Message}", ex);
+            }
+        }
+
+        public IEnumerable<Profile> LoadProfiles()
+        {
+            var profiles = new List<Profile>();
+            string filePath = GetProfilesFilePath();
+            
+            string content = DecryptAndRead(filePath);
+            if (string.IsNullOrEmpty(content))
             {
                 return profiles;
             }
-
-            var lines = File.ReadAllLines(filePath);
+            
+            var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             foreach (var line in lines)
             {
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
-                var parts = line.Split(';');
+                var parts = line.Split('|');
                 if (parts.Length == 6)
                 {
-                    var profile = new Profile
+                    try
                     {
-                        Id = Guid.Parse(parts[0]),
-                        Login = parts[1],
-                        Password = parts[2],
-                        FirstName = parts[3],
-                        LastName = parts[4],
-                        BirthYear = int.Parse(parts[5])
-                    };
-                    profiles.Add(profile);
+                        var profile = new Profile
+                        {
+                            Id = Guid.Parse(parts[0]),
+                            Login = parts[1],
+                            Password = parts[2],
+                            FirstName = parts[3],
+                            LastName = parts[4],
+                            BirthYear = int.Parse(parts[5])
+                        };
+                        profiles.Add(profile);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException($"Ошибка парсинга профиля: {ex.Message}", ex);
+                    }
                 }
             }
-
+            
             return profiles;
         }
 
-        private static void SaveAllProfiles(List<Profile> profiles, string filePath)
+        public void SaveTodos(Guid userId, IEnumerable<TodoItem> todos)
         {
-            var lines = new List<string>();
-            foreach (var profile in profiles)
+            try
             {
-                string line = $"{profile.Id};{profile.Login};{profile.Password};{profile.FirstName};{profile.LastName};{profile.BirthYear}";
-                lines.Add(line);
+                var lines = new List<string>();
+                foreach (var item in todos)
+                {
+                    string escapedText = EscapeText(item.Text);
+                    string line = $"{escapedText}|{item.Status}|{item.LastUpdate:yyyy-MM-ddTHH:mm:ss}";
+                    lines.Add(line);
+                }
+                
+                string content = string.Join("\n", lines);
+                string filePath = GetTodosFilePath(userId);
+                EncryptAndWrite(filePath, content);
             }
-            File.WriteAllLines(filePath, lines);
+            catch (Exception ex) when (ex is InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Не удалось сохранить задачи: {ex.Message}", ex);
+            }
         }
 
-        public static void SaveTodos(TodoList todos, string filePath)
+        public IEnumerable<TodoItem> LoadTodos(Guid userId)
         {
-            var lines = new List<string>();
-            int index = 0;
-
-            foreach (var item in todos.GetAll())
-            {
-                string escapedText = EscapeCsv(item.Text);
-                string line = $"{index};{escapedText};{item.Status};{item.LastUpdate:yyyy-MM-ddTHH:mm:ss}";
-                lines.Add(line);
-                index++;
-            }
-
-            File.WriteAllLines(filePath, lines);
-        }
-
-        public static TodoList LoadTodos(string filePath)
-        {
-            var todos = new TodoList();
-
-            if (!File.Exists(filePath))
+            var todos = new List<TodoItem>();
+            string filePath = GetTodosFilePath(userId);
+            
+            string content = DecryptAndRead(filePath);
+            if (string.IsNullOrEmpty(content))
             {
                 return todos;
             }
-
-            var lines = File.ReadAllLines(filePath);
+            
+            var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             foreach (var line in lines)
             {
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
-                var parts = ParseCsvLine(line);
-                if (parts.Count >= 4)
+                var parts = line.Split('|');
+                if (parts.Length == 3)
                 {
-                    string text = UnescapeCsv(parts[1]);
-                    var status = Enum.Parse<TodoStatus>(parts[2]);
-                    DateTime.TryParse(parts[3], out DateTime lastUpdate);
-
-                    var item = new TodoItem(text)
+                    try
                     {
-                        Status = status,
-                        LastUpdate = lastUpdate
-                    };
-                    todos.Add(item);
+                        string text = UnescapeText(parts[0]);
+                        var status = Enum.Parse<TodoStatus>(parts[1]);
+                        DateTime lastUpdate = DateTime.Parse(parts[2]);
+                        
+                        var item = new TodoItem(text)
+                        {
+                            Status = status,
+                            LastUpdate = lastUpdate
+                        };
+                        todos.Add(item);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException($"Ошибка парсинга задачи: {ex.Message}", ex);
+                    }
                 }
             }
-
+            
             return todos;
         }
 
-        private static string EscapeCsv(string text)
+        private string EscapeText(string text)
         {
-            return "\"" + text.Replace("\"", "\"\"").Replace("\n", "\\n") + "\"";
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(text));
         }
 
-        private static string UnescapeCsv(string text)
+        private string UnescapeText(string escaped)
         {
-            return text.Trim('"').Replace("\\n", "\n").Replace("\"\"", "\"");
-        }
-
-        private static List<string> ParseCsvLine(string line)
-        {
-            var parts = new List<string>();
-            var current = new StringBuilder();
-            bool inQuotes = false;
-
-            for (int i = 0; i < line.Length; i++)
-            {
-                char c = line[i];
-
-                if (c == '"')
-                {
-                    inQuotes = !inQuotes;
-                    current.Append(c);
-                }
-                else if (c == ';' && !inQuotes)
-                {
-                    parts.Add(current.ToString());
-                    current.Clear();
-                }
-                else
-                {
-                    current.Append(c);
-                }
-            }
-
-            parts.Add(current.ToString());
-            return parts;
-        }
-
-        public static string GetTodoFilePath(Guid profileId)
-        {
-            return Path.Combine(DataDir, $"todos_{profileId}.csv");
-        }
-
-        // Метод для подписки на события TodoList
-        // Сохраняет текущий список задач при любом изменении
-        public static void SaveTodoList(TodoItem item)
-        {
-            var profile = AppInfo.CurrentProfile;
-            if (profile != null)
-            {
-                var todoList = AppInfo.GetCurrentTodoList();
-                if (todoList != null)
-                {
-                    string filePath = GetTodoFilePath(profile.Id);
-                    SaveTodos(todoList, filePath);
-                }
-            }
+            return Encoding.UTF8.GetString(Convert.FromBase64String(escaped));
         }
     }
 }

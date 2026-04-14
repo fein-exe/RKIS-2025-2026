@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using TodoApp.Exceptions;
 using TodoApp.Models;
 using TodoApp.Services;
@@ -23,21 +24,34 @@ namespace TodoApp.Commands
                 throw new InvalidArgumentException("Логин и пароль не могут быть пустыми");
             }
 
-            var profile = FileManager.LoadProfile(_login, _password);
+            var profile = AppInfo.Profiles.FirstOrDefault(p => p.Login == _login && p.Password == _password);
+            
             if (profile != null)
             {
                 AppInfo.CurrentProfile = profile;
                 
                 if (!AppInfo.UserTodos.ContainsKey(profile.Id))
                 {
-                    string filePath = FileManager.GetTodoFilePath(profile.Id);
-                    var todoList = FileManager.LoadTodos(filePath);
-                    AppInfo.UserTodos[profile.Id] = todoList;
-                    
-                    todoList.OnTodoAdded += (item) => FileManager.SaveTodoList(item);
-                    todoList.OnTodoDeleted += (item) => FileManager.SaveTodoList(item);
-                    todoList.OnTodoUpdated += (item) => FileManager.SaveTodoList(item);
-                    todoList.OnStatusChanged += (item) => FileManager.SaveTodoList(item);
+                    try
+                    {
+                        var todos = AppInfo.DataStorage.LoadTodos(profile.Id);
+                        var todoList = new TodoList();
+                        foreach (var item in todos)
+                        {
+                            todoList.Add(item);
+                        }
+                        
+                        todoList.OnTodoAdded += (item) => SaveTodos(profile.Id);
+                        todoList.OnTodoDeleted += (item) => SaveTodos(profile.Id);
+                        todoList.OnTodoUpdated += (item) => SaveTodos(profile.Id);
+                        todoList.OnStatusChanged += (item) => SaveTodos(profile.Id);
+                        
+                        AppInfo.UserTodos[profile.Id] = todoList;
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException($"Ошибка загрузки задач: {ex.Message}", ex);
+                    }
                 }
                 
                 Console.WriteLine($"Добро пожаловать, {profile.GetInfo()}");
@@ -45,6 +59,15 @@ namespace TodoApp.Commands
             else
             {
                 throw new AuthenticationException("Неверный логин или пароль");
+            }
+        }
+
+        private void SaveTodos(Guid userId)
+        {
+            var todoList = AppInfo.UserTodos[userId];
+            if (todoList != null)
+            {
+                AppInfo.DataStorage.SaveTodos(userId, todoList.GetAll());
             }
         }
     }

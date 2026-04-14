@@ -8,8 +8,8 @@ namespace TodoApp.Commands
     public class DeleteCommand : IUndoableCommand
     {
         private int _index;
-        private TodoItem _deletedItem;
-        private TodoList _todos;
+        private TodoItem? _deletedItem;
+        private TodoList? _todos;
 
         public DeleteCommand(int index)
         {
