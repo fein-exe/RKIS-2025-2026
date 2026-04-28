@@ -125,7 +125,7 @@ MVVM, `INotifyPropertyChanged`, `CommunityToolkit.Mvvm`, `ObservableObject`, `[O
 
 ### Дедлайн
 
-26 апреля 2026
+3 мая 2026
 
 ---
 
@@ -133,7 +133,7 @@ MVVM, `INotifyPropertyChanged`, `CommunityToolkit.Mvvm`, `ObservableObject`, `[O
 
 ### Темы:
 
-—
+Слоистая архитектура, Domain-Driven Design, Dependency Injection
 
 ---
 
@@ -141,27 +141,7 @@ MVVM, `INotifyPropertyChanged`, `CommunityToolkit.Mvvm`, `ObservableObject`, `[O
 
 ### Темы:
 
-—
-
-### Дедлайн
-
-10 мая 2026
-
----
-
-## Занятие 12. Данные, валидация и обработка ошибок
-
-### Темы:
-
-—
-
----
-
-## Занятие 13. Безопасность Web API и работа с файлами
-
-### Темы:
-
-—
+Kestrel, Minimal API, Controllers, Swagger, OpenAPI
 
 ### Дедлайн
 
@@ -169,7 +149,23 @@ MVVM, `INotifyPropertyChanged`, `CommunityToolkit.Mvvm`, `ObservableObject`, `[O
 
 ---
 
-## Занятие 14. Архитектура проекта и др
+## Занятие 12. Middleware pipline
+
+### Темы:
+
+—
+
+---
+
+## Занятие 13. Безопасность Web API
+
+### Темы:
+
+—
+
+---
+
+## Занятие 14. Работа с файлами Web API
 
 ### Темы:
 
@@ -243,7 +239,7 @@ Test-Driven Development, Цикл Red-Green-Refactor
 
 ### Дедлайн
 
-3 мая 2026
+24 мая 2026
 
 ---
 
