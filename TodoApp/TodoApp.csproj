@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <DefaultItemExcludes>$(DefaultItemExcludes);TodoApp.Tests\**\*</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);TodoApp.Tests\**\*;TodoApp.Models\**\*;TodoApp.Data\**\*;TodoApp.Desktop\**\*;artifacts\**\*;.build\**\*;..\.build\**\*</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

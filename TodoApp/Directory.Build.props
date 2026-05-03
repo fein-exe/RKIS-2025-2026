@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'TodoApp.Desktop'">
+    <BaseIntermediateOutputPath>$(TEMP)\TodoAppBuild\TodoApp.Desktop\obj\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(TEMP)\TodoAppBuild\TodoApp.Desktop\bin\</BaseOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj\**\*;bin\**\*</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>
